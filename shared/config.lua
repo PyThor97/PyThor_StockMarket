@@ -16,8 +16,8 @@ Config.Locations = {
         NpcHeading = 320.12,
         ped = 's_m_m_bankclerk_01',
         distance = 2
-    }, -- Rhodes
-    {
+    }, 
+    { -- Rhodes
         Blip = true,
         BlipSprite = 'blip_robbery_bank',
         BlipName = 'Rhodes Stock Market',
@@ -28,7 +28,10 @@ Config.Locations = {
     }
 }
 
-Config.Categories = {'Trains', 'Oil'}
+Config.Categories = {
+    'Trains',
+    'Oil'
+} 
 
 -- missions
 Config.advertising = {

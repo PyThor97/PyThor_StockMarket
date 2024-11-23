@@ -73,14 +73,28 @@ Citizen.CreateThread(function()
         style = {}
     })
 
-    StockInfoPage:RegisterElement('textdisplay',
-                                  {value = '', style = {fontSize = '20px'}})
+    StockInfoPage:RegisterElement('textdisplay',{value = '', style = {fontSize = '20px'}})
+
+    for index, category in ipairs(Config.Categories) do
+        local cat = category
+        StockMenuFirstPage:RegisterElement('button', {
+            label = '',
+            style = {},
+            sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+        }, 
+        function()
+             StockInfoPage:RouteTo() 
+        end)
+    end
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Check your stock shares",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-    }, function() StockInfoPage:RouteTo() end)
+    }, 
+    function()
+         StockInfoPage:RouteTo() 
+    end)
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Buy Stock",
