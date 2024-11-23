@@ -29,7 +29,7 @@ Config.Locations = {
 }
 
 Config.Categories = {
-    'Trains',
+    'Train',
     'Oil'
 } 
 

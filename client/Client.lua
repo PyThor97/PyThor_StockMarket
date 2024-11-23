@@ -73,28 +73,49 @@ Citizen.CreateThread(function()
         style = {}
     })
 
-    StockInfoPage:RegisterElement('textdisplay',{value = '', style = {fontSize = '20px'}})
+    StockInfoPage:RegisterElement('textdisplay',
+                                  {value = '', style = {fontSize = '20px'}})
 
     for index, category in ipairs(Config.Categories) do
+        -- משתנה לשמירת הערך
+        local stockValue = nil
+        local waiting = true -- אינדיקציה להמתנה לערך מהשרת
+
+        -- שליחת בקשה לשרת עם הקטגוריה
         local cat = category
-        StockMenuFirstPage:RegisterElement('button', {
-            label = '',
-            style = {},
-            sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-        }, 
-        function()
-             StockInfoPage:RouteTo() 
+        TriggerServerEvent('stocks:GetValue', cat)
+
+        -- קבלת הערך מהשרת ושמירתו במשתנה
+        RegisterNetEvent('stocks:ReturnValue')
+        AddEventHandler('stocks:ReturnValue', function(value)
+            stockValue = value -- שמירת הערך במשתנה
+            waiting = false -- עצירת ההמתנה
         end)
+
+        -- המתנה עד לקבלת הערך מהשרת
+        while waiting do
+            Citizen.Wait(100) -- המתנה קצרה עד שהשרת מחזיר את הערך
+        end
+
+        -- הגדרת צבע הטקסט בהתבסס על הערך
+        local textColor = (tonumber(stockValue) >= 100) and "green" or "red"
+
+        -- יצירת כפתור בתפריט עם הערך שהתקבל
+        StockInfoPage:RegisterElement('button', {
+            label = cat .. ": " .. tostring(stockValue) ..'%',
+            style = {color = textColor}, -- הגדרת הצבע
+            sound = {
+                action = "SELECT",
+                soundset = "RDRO_Character_Creator_Sounds"
+            }
+        }, function() end)
     end
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Check your stock shares",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-    }, 
-    function()
-         StockInfoPage:RouteTo() 
-    end)
+    }, function() StockInfoPage:RouteTo() end)
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Buy Stock",
