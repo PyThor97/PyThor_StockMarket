@@ -33,6 +33,8 @@ Config.Categories = {
     'Oil'
 } 
 
+Config.Price = 100
+
 -- missions
 Config.advertising = {
 
