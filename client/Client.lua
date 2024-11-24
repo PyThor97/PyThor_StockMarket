@@ -80,6 +80,13 @@ Citizen.CreateThread(function()
         style = {fontSize = '20px'}
     })
 
+    StockInfoPage:RegisterElement('button', {
+        label = "Return",
+        style = {},
+        slot = 'footer',
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function() StockMenuFirstPage:RouteTo() end)
+
     for index, category in ipairs(Config.Categories) do
         local stockValue = nil
         local waiting = true
@@ -106,7 +113,7 @@ Citizen.CreateThread(function()
     end
 
     StockMenuFirstPage:RegisterElement('button', {
-        label = "Check your stock shares",
+        label = "Check stocks info",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() StockInfoPage:RouteTo() end)
@@ -116,6 +123,12 @@ Citizen.CreateThread(function()
     buypage:RegisterElement('header',
                             {value = 'Buy shares', slot = "header", style = {}})
 
+    buypage:RegisterElement('button', {
+        label = "Return",
+        style = {},
+        slot = 'footer',
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function() StockMenuFirstPage:RouteTo() end)
     local amountPage = StockMenu:RegisterPage('amount:page')
 
     amountPage:RegisterElement('header', {
@@ -154,27 +167,10 @@ Citizen.CreateThread(function()
                 'Sending amount and category: ' .. tostring(amount) .. ', ' ..
                     tostring(ButtonClicked))
             TriggerServerEvent('stocks:buyShares', ButtonClicked, amount)
-        else
+        elseif amount == 0 then
             DevPrint('Amount or ButtonClicked is nil')
-            TriggerEvent('chat:addMessage', {
-                args = {
-                    "^1[Error]:^0 Please select a valid amount and category."
-                }
-            })
+            Core.NotifyTip("Select valid amount", 4000)
         end
-
-        RegisterNetEvent('stocks:TransactionResult')
-        AddEventHandler('stocks:TransactionResult', function(success, message)
-            if success then
-                -- הודעה על הצלחה
-                TriggerEvent('chat:addMessage',
-                             {args = {"^2[Success]:^0 " .. message}})
-            else
-                -- הודעה על כישלון
-                TriggerEvent('chat:addMessage',
-                             {args = {"^1[Error]:^0 " .. message}})
-            end
-        end)
     end)
 
     for _, v in ipairs(Config.Categories) do
@@ -205,14 +201,18 @@ Citizen.CreateThread(function()
         slot = "header",
         style = {}
     })
+    sell_stock_page:RegisterElement('button', {
+        label = "Return",
+        style = {},
+        slot = 'footer',
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function() StockMenuFirstPage:RouteTo() end)
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Sell Stock",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-    }, function()
-        sell_stock_page:RouteTo()
-    end)
+    }, function() sell_stock_page:RouteTo() end)
 
     StockMenuFirstPage:RegisterElement('button', {
         label = "Missions",

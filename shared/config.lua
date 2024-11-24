@@ -30,7 +30,9 @@ Config.Locations = {
 
 Config.Categories = {
     'Train',
-    'Oil'
+    'Oil',
+    'Spices',
+    'Gold'
 } 
 
 Config.Price = 100

@@ -45,9 +45,9 @@ AddEventHandler('stocks:buyShares', function(stockName, quantity)
             {playerIdentifier, characterName, stockName, quantity}
         )
 
-        TriggerClientEvent('stocks:TransactionResult', src, true, "You successfully bought " .. quantity .. " shares of " .. stockName .. " for $" .. totalPrice .. ".")
+        Core.NotifyObjective(src, "You bought: " .. quantity .. ' in ' .. stockName, 4000)
     else
-        TriggerClientEvent('stocks:TransactionResult', src, false, "You don't have enough money to buy " .. quantity .. " shares of " .. stockName .. ".")
+        Core.NotifyObjective(src, "Not enough money", 4000)
     end
 end)
 
