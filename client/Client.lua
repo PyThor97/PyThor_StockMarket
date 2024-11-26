@@ -1,23 +1,38 @@
--- impport all tools
+-- ===============================
+--         IMPORT TOOLS
+-- ===============================
 local Core = exports.vorp_core:GetCore()
 local Animations = exports.vorp_animations.initiate()
 local FeatherMenu = exports['feather-menu'].initiate()
 local BccUtils = exports['bcc-utils'].initiate()
 local progressbar = exports.vorp_progressbar:initiate()
 
--- global vars
+-- ===============================
+--          PROMPTS
+-- ===============================
 local StockMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 local Stockprompt = StockMenuPrompt:RegisterPrompt("Invest in stock",
                                                    0x760A9C6F, 1, 1, true,
                                                    'click')
+
+-- ===============================
+--          GLOBAL VARS
+-- ===============================
 local pedsCreated = {}
 local blipsCreated = {}
-local stock_to_buy = ''
-
--- devprint function
+local Sell_button_clicked = ''
+-- ===============================
+--          DEV PRINT
+-- ===============================
 local function DevPrint(...) if Config.DevMode then print("[DEV MODE]", ...) end end
 
--- create peds
+-- ===============================
+--          NET EVENTS
+-- ===============================
+
+-- ===============================
+--          CREATE PEDS
+-- ===============================
 Citizen.CreateThread(function()
     for _, value in ipairs(Config.Locations) do
         local StockPed = BccUtils.Ped:Create(value.ped, value.coords.x,
@@ -31,7 +46,9 @@ Citizen.CreateThread(function()
     DevPrint('Peds created')
 end)
 
--- Create blips
+-- ===============================
+--          CREATE BLIPS
+-- ===============================
 Citizen.CreateThread(function()
     for _, v in pairs(Config.Locations) do
         local blip = BccUtils.Blips:SetBlip('Stock Market', v.BlipSprite, 3.2,
@@ -42,6 +59,9 @@ end)
 
 -- Create the menu
 Citizen.CreateThread(function()
+    -- ===============================
+    --          MAIN MENU
+    -- ===============================
     StockMenu = FeatherMenu:RegisterMenu('Stock:main', {
         top = '40%',
         left = '20%',
@@ -67,6 +87,9 @@ Citizen.CreateThread(function()
         style = {}
     })
 
+    -- ===============================
+    --          STOCK INFO
+    -- ===============================
     local StockInfoPage = StockMenu:RegisterPage('info:page')
 
     StockInfoPage:RegisterElement('header', {
@@ -104,7 +127,7 @@ Citizen.CreateThread(function()
 
         StockInfoPage:RegisterElement('button', {
             label = cat .. ": " .. tostring(stockValue) .. '%',
-            style = {color = textColor}, -- הגדרת הצבע
+            style = {color = textColor},
             sound = {
                 action = "SELECT",
                 soundset = "RDRO_Character_Creator_Sounds"
@@ -118,6 +141,10 @@ Citizen.CreateThread(function()
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() StockInfoPage:RouteTo() end)
 
+    -- ===============================
+    --          BUY PAGE
+    -- ===============================
+
     local buypage = StockMenu:RegisterPage('Buy:page')
 
     buypage:RegisterElement('header',
@@ -129,6 +156,7 @@ Citizen.CreateThread(function()
         slot = 'footer',
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() StockMenuFirstPage:RouteTo() end)
+
     local amountPage = StockMenu:RegisterPage('amount:page')
 
     amountPage:RegisterElement('header', {
@@ -156,6 +184,12 @@ Citizen.CreateThread(function()
             style = {fontSize = '20px'}
         })
     end)
+    amountPage:RegisterElement('button', {
+        label = "Return",
+        style = {},
+        slot = 'footer',
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function() buypage:RouteTo() end)
 
     amountPage:RegisterElement('button', {
         label = "Confirm",
@@ -194,6 +228,40 @@ Citizen.CreateThread(function()
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() buypage:RouteTo() end)
 
+    -- ===============================
+    --          SELL PAGE
+    -- ===============================
+
+    local sell_stock_amount = StockMenu:RegisterPage('sell_amount:page')
+
+    sell_stock_amount:RegisterElement('header', {
+        value = 'How much to sell?',
+        slot = "header",
+        style = {}
+    })
+
+    sell_stock_amount:RegisterElement('button', {
+        label = "Confirm",
+        style = {},
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function() end)
+
+    local player_stock_amount = sell_stock_amount:RegisterElement('textdisplay', {
+        value = "Your " .. Sell_button_clicked .. ' amount: ',
+        style = {fontSize = '25px'}
+    })
+
+    sell_stock_amount:RegisterElement('slider', {
+        label = "Amount to sell",
+        start = 1,
+        min = 0,
+        max = 100,
+        steps = 1
+    }, function(data)
+        local sell_amount = data.value
+        
+        end)
+
     local sell_stock_page = StockMenu:RegisterPage('sell:page')
 
     sell_stock_page:RegisterElement('header', {
@@ -201,19 +269,30 @@ Citizen.CreateThread(function()
         slot = "header",
         style = {}
     })
-    sell_stock_page:RegisterElement('button', {
-        label = "Return",
-        style = {},
-        slot = 'footer',
-        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-    }, function() StockMenuFirstPage:RouteTo() end)
+
+    for _, v in ipairs(Config.Categories) do
+        sell_stock_page:RegisterElement('button', {
+            label = 'Sell ' .. v .. ' shares',
+            style = {},
+            id = v,
+            sound = {
+                action = "SELECT",
+                soundset = "RDRO_Character_Creator_Sounds"
+            }
+        }, function(data)
+            SellButtonClicked = data.id
+            sell_stock_amount:RouteTo()
+        end)
+    end
 
     StockMenuFirstPage:RegisterElement('button', {
-        label = "Sell Stock",
+        label = "Sell stocks",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() sell_stock_page:RouteTo() end)
-
+    -- ===============================
+    --          MISSIONS
+    -- ===============================
     StockMenuFirstPage:RegisterElement('button', {
         label = "Missions",
         style = {},
@@ -225,7 +304,8 @@ end)
 
 -- open menu
 Citizen.CreateThread(function()
-    while true do
+    local menuIsOpen = false
+    while true and not menuIsOpen do
         Wait(1)
         local playerCoords = GetEntityCoords(PlayerPedId())
         for _, v in pairs(Config.Locations) do
@@ -234,6 +314,7 @@ Citizen.CreateThread(function()
                 StockMenuPrompt:ShowGroup('Press G')
                 if Stockprompt:HasCompleted() then
                     StockMenu:Open({startupPage = StockMenuFirstPage})
+                    menuIsOpen = true
                 end
             end
         end
