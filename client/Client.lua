@@ -6,7 +6,6 @@ local Animations = exports.vorp_animations.initiate()
 local FeatherMenu = exports['feather-menu'].initiate()
 local BccUtils = exports['bcc-utils'].initiate()
 local progressbar = exports.vorp_progressbar:initiate()
-local sell_amount = 0
 -- ===============================
 --          PROMPTS
 -- ===============================
@@ -266,7 +265,6 @@ Citizen.CreateThread(function()
     sell_stock_amount:RegisterElement('button', {
         label = "Return",
         style = {},
-        slot = 'footer',
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() sell_stock_page:RouteTo() end)
 
