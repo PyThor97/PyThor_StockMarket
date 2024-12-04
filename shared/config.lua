@@ -33,9 +33,10 @@ Config.Categories = {
     'Oil',
     'Spices',
     'Gold'
-} 
+}
 
-Config.Price = 100
+--Base price for a share
+Config.BuyPrice = 100
 
 -- missions
 Config.advertising = {
