@@ -41,9 +41,6 @@ Config.BuyPrice = 100
 --how much to profit per precent
 Config.ProfitPerPrecent = 10
 
---how much to lose per precent
-Config.LossPerPrecent = 10
-
 -- missions
 Config.advertising = {
 

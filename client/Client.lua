@@ -19,6 +19,7 @@ local Stockprompt = StockMenuPrompt:RegisterPrompt("Invest in stock",
 local pedsCreated = {}
 local blipsCreated = {}
 local SellButtonClicked = ''
+local sell_amount = nil
 -- ===============================
 --          DEV PRINT
 -- ===============================
@@ -144,7 +145,8 @@ Citizen.CreateThread(function()
 
     local buypage = StockMenu:RegisterPage('Buy:page')
 
-    buypage:RegisterElement('header',{value = 'Buy shares', slot = "header", style = {}})
+    buypage:RegisterElement('header',
+                            {value = 'Buy shares', slot = "header", style = {}})
 
     buypage:RegisterElement('button', {
         label = "Return",
@@ -172,6 +174,7 @@ Citizen.CreateThread(function()
         start = 0,
         min = 0,
         max = 100,
+        persist = false,
         steps = 1
     }, function(data)
         amount_to_buy = data.value
@@ -196,15 +199,15 @@ Citizen.CreateThread(function()
             Core.NotifyTip("Please select a valid amount.", 4000)
             return
         end
-    
+
         if not ButtonClicked or ButtonClicked == '' then
             Core.NotifyTip("Please select a stock category.", 4000)
             return
         end
-    
+
         -- שליחת שם המניה וכמות לשרת
         TriggerServerEvent('stocks:BuyShares', ButtonClicked, amount_to_buy)
-    
+
         -- קבלת תגובה מהשרת
         RegisterNetEvent('stocks:BuyResult')
         AddEventHandler('stocks:BuyResult', function(success, message)
@@ -265,6 +268,7 @@ Citizen.CreateThread(function()
     sell_stock_amount:RegisterElement('button', {
         label = "Return",
         style = {},
+        slot = 'footer',
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function() sell_stock_page:RouteTo() end)
 
@@ -282,20 +286,28 @@ Citizen.CreateThread(function()
     sell_stock_amount:RegisterElement('button', {
         label = "Confirm",
         style = {},
-        slot = 'footer',
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function()
-        -- שליחת נתונים לשרת
-        TriggerServerEvent('stocks:SellShares', SellButtonClicked, sell_amount)
-        -- האזנה לתוצאה מהשרת
-        RegisterNetEvent('stocks:SellResult')
-        AddEventHandler('stocks:SellResult', function(success, message)
-            if success then
-                DevPrint(message)
-            else
-                DevPrint(message)
-            end
-        end)
+        if sell_amount and SellButtonClicked then
+            TriggerServerEvent('stocks:SellShares', SellButtonClicked,
+                               sell_amount)
+
+            RegisterNetEvent('stocks:SellResult')
+            AddEventHandler('stocks:SellResult',
+                                                 function(success, message)
+                if success then
+                    -- הודעת הצלחה
+                    TriggerEvent("vorp:TipBottom", message, 4000) -- תצוגה של הודעה בצד ימין ל-5 שניות
+                else
+                    -- הודעת שגיאה
+                    TriggerEvent("vorp:TipBottom", message, 4000) -- תצוגה של הודעה בתחתית ל-5 שניות
+                end
+            end)
+
+        else
+            TriggerEvent("vorp:TipBottom",
+                         "Please select a valid amount and stock.", 4000)
+        end
     end)
 
     sell_stock_page:RegisterElement('header', {
@@ -323,7 +335,7 @@ Citizen.CreateThread(function()
                     DevPrint('shares owned: ' .. shares)
                     local PlayerShares = shares
                     player_shares_amount:update({
-                        label = SellButtonClicked .. ' shares: ' .. PlayerShares
+                        label = 'Your '.. SellButtonClicked .. ' shares: ' .. PlayerShares
                     })
                 else
                     print("You have no shares in " .. SellButtonClicked)

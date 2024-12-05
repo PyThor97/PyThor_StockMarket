@@ -117,7 +117,6 @@ AddEventHandler('stocks:GetPlayerShares', function(stockName)
                        'SELECT `shares` FROM `player_stocks` WHERE `player_identifier` = ? AND `stock_name` = ?',
                        {playerIdentifier, stockName})
 
-    -- שליחת התשובה ללקוח
     if shares then
         TriggerClientEvent('stocks:ReturnPlayerShares', src, shares)
     else
@@ -129,42 +128,68 @@ end)
 --        SELL PLAYER SHARES
 -- ====================================
 RegisterNetEvent('stocks:SellShares')
-AddEventHandler('stocks:SellShares', function(stockName, sellAmount)
-    local src = source -- מזהה הלקוח ששלח את הבקשה
-    local user = Core.getUser(src) -- קבלת מידע על השחקן
-    local character = user.getUsedCharacter -- קבלת מידע על הדמות
-    local playerIdentifier = character.identifier -- מזהה השחקן
-
-    local shares = MySQL.scalar.await(
-                       'SELECT `shares` FROM `player_stocks` WHERE `player_identifier` = ? AND `stock_name` = ?',
-                       {playerIdentifier, stockName})
-
-    local stockValue = MySQL.scalar.await(
-                           'SELECT `stock_value` FROM `pythor_stocks` WHERE `stock_name` = ?',
-                           {stockName})
-
-    if not shares or shares < sellAmount then
-        -- אם אין מספיק מניות למכירה
-        TriggerClientEvent('stocks:SellResult', src, false,
-                           "You don't have enough shares to sell.")
+AddEventHandler('stocks:SellShares', function(stockName, quantity)
+    local src = source
+    local user = Core.getUser(src)
+    if not user then
+        TriggerClientEvent('stocks:SellResult', src, false, "User not found.")
         return
     end
 
-    -- חישוב הסכום שמגיע לשחקן
-    local totalValue = stockValue * sellAmount
+    local character = user.getUsedCharacter
+    if not character then
+        TriggerClientEvent('stocks:SellResult', src, false,
+                           "Character not found.")
+        return
+    end
 
-    -- עדכון מספר המניות
+    local playerIdentifier = character.identifier
+
+    local stockValue = MySQL.scalar.await(
+                           'SELECT stock_value FROM pythor_stocks WHERE stock_name = ?',
+                           {stockName})
+    if not stockValue then
+        TriggerClientEvent('stocks:SellResult', src, false, "Stock not found.")
+        return
+    end
+
+    -- שליפת מספר המניות שיש לשחקן
+    local playerShares = MySQL.scalar.await(
+                             'SELECT shares FROM player_stocks WHERE player_identifier = ? AND stock_name = ?',
+                             {playerIdentifier, stockName})
+    if not playerShares or playerShares < quantity then
+        TriggerClientEvent('stocks:SellResult', src, false,
+                           "Not enough shares to sell.")
+        return
+    end
+
+    -- הגדר מחירי רווח והפסד מהקונפיג
+    local profitAmount = Config.ProfitAmount or 10 -- רווח לדוגמה
+    local buyPrice = Config.BuyPrice or 100 -- מחיר הבסיס לדוגמה
+    local sellPrice = 0
+
+    -- תנאי לחשב את הסכום
+    if stockValue >= 100 then
+        sellPrice = buyPrice + (quantity * profitAmount)
+    else
+        -- כאן תוכל להוסיף תנאי למכירה בהפסד אם המניה פחות מ-100
+        TriggerClientEvent('stocks:SellResult', src, false,
+                           "There is no demend for that stock")
+        return
+    end
+
+    -- עדכון מספר המניות של השחקן
     MySQL.update.await(
-        'UPDATE `player_stocks` SET `shares` = `shares` - ? WHERE `player_identifier` = ? AND `stock_name` = ?',
-        {sellAmount, playerIdentifier, stockName})
+        'UPDATE player_stocks SET shares = shares - ? WHERE player_identifier = ? AND stock_name = ?',
+        {quantity, playerIdentifier, stockName})
 
-    -- הוספת הכסף לשחקן
-    character.addCurrency(0, 1000)
+    -- הוספת כסף לשחקן
+    character.addCurrency(0, sellPrice)
 
-    -- החזרת הודעת הצלחה ללקוח
+    -- החזרת תגובה ללקוח
     TriggerClientEvent('stocks:SellResult', src, true,
-                       "You sold " .. sellAmount .. " shares of " .. stockName ..
-                           " for $" .. totalValue .. ".")
+                       "Sold " .. quantity .. " shares of " .. stockName ..
+                           " for $" .. math.floor(sellPrice))
 end)
 
 -- ===============================
