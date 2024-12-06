@@ -14,7 +14,7 @@ Config.Locations = {
         BlipName = 'Valentine Stock Market',
         coords = vector3(-306.02, 773.52, 118.7),
         NpcHeading = 320.12,
-        ped = 's_m_m_bankclerk_01',
+        ped = 'a_m_m_htlfancytravellers_01',
         distance = 2
     }, 
     { -- Rhodes
@@ -23,7 +23,7 @@ Config.Locations = {
         BlipName = 'Rhodes Stock Market',
         coords = vector3(1291.26, -1303.23, 77.04),
         NpcHeading = 319.5,
-        ped = 's_m_m_bankclerk_01',
+        ped = 'a_m_m_htlfancytravellers_01',
         distance = 2
     }
 }
@@ -42,14 +42,16 @@ Config.BuyPrice = 100
 Config.ProfitPerPrecent = 10
 
 -- missions
-Config.advertising = {
+Config.Advertising = {
 
-    {coords = vector3(-182.72, 584.77, 113.42), reward = math.random(1, 5)},
-    {coords = vector3(-191.61, 563.51, 113.79), reward = math.random(1, 5)},
-    {coords = vector3(1381.95, -1403.74, 79.3), reward = math.random(1, 5)},
-    {coords = vector3(1381.95, -1403.74, 79.3), reward = math.random(1, 5)}
+    {id = 1, coords = vector3(-182.72, 584.77, 113.42)},
+    {id = 2,coords = vector3(-191.61, 563.51, 113.79)},
+    {id = 3,coords = vector3(1381.95, -1403.74, 79.3)},
+    {id = 4,coords = vector3(1381.95, -1403.74, 79.3)}
 
 }
+--Value for all Advertising missions or a set number
+Config.AdValue = math.random(1,5)
 
 Config.Recruting = {
     {
@@ -70,8 +72,12 @@ Config.Recruting = {
         reward = math.random(1, 5)
     }
 }
+--Value for all Recruting missions or a set number
+Config.RecValue = math.random(1,5)
 
 Config.infoExtracting = {
-    {coords = vector3(1331.64, -1378.09, 80.51), reward = math.random(1, 5)},
-    {coords = vector3(1399.2, -1285.79, 78.17), reward = math.random(1, 5)}
+    {coords = vector3(1331.64, -1378.09, 80.51)},
+    {coords = vector3(1399.2, -1285.79, 78.17)}
 }
+--Value for all info Extracting missions or a set number
+Config.InfoValue = math.random(1,5)

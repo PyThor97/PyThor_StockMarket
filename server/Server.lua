@@ -213,3 +213,53 @@ AddEventHandler('stocks:GetStockValue', function(stockName)
     TriggerClientEvent('stocks:ReturnStockValue', src, stockValue)
     print("[INFO] Sent stock value:", stockValue, "for stock:", stockName)
 end)
+
+-- ===============================
+--      INCREASE STOCK VALUE
+-- ===============================
+-- אירוע לקבלת הבקשה מצד הלקוח
+RegisterNetEvent('stocks:IncreaseStockValue')
+AddEventHandler('stocks:IncreaseStockValue', function(stockName)
+    local src = source
+local user = Core.getUser(src)
+local character = user.getUsedCharacter
+local playerIdentifier = character.identifier
+local contributionPoints  = Config.AdValue
+
+    if not stockName then
+        print("[ERROR] Missing stock name or value increase from client.")
+        return
+    end
+
+    -- חישוב הערך החדש
+    local currentStockValue = MySQL.scalar.await(
+        'SELECT stock_value FROM pythor_stocks WHERE stock_name = ?',
+        {stockName}
+    )
+
+    if not currentStockValue then
+        print("[ERROR] Stock not found: " .. tostring(stockName))
+        TriggerClientEvent("vorp:TipBottom", src, "Stock not found.", 5000)
+        return
+    end
+
+    local newStockValue = currentStockValue + contributionPoints
+
+    -- עדכון הערך במסד הנתונים
+    MySQL.update.await(
+        'UPDATE pythor_stocks SET stock_value = ? WHERE stock_name = ?',
+        {newStockValue, stockName}
+    )
+    local updateSuccess = MySQL.update.await(
+        [[
+        INSERT INTO player_stocks (player_identifier, character_name, stock_name, contribution)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+            contribution = contribution + VALUES(contribution)
+        ]],
+        {playerIdentifier, character.firstname .. " " .. character.lastname, stockName, contributionPoints or 0}
+    )
+    -- הודעה ללקוח שהפעולה בוצעה
+    TriggerClientEvent("vorp:TipRight", src, "Stock value increased by: " .. contributionPoints, 5000)
+    print("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
+end)

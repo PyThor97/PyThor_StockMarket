@@ -13,6 +13,14 @@ local StockMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 local Stockprompt = StockMenuPrompt:RegisterPrompt("Invest in stock",
                                                    0x760A9C6F, 1, 1, true,
                                                    'click')
+local AdvertisingPromptGroup = BccUtils.Prompt:SetupPromptGroup()
+local AdvertisingPrompt = AdvertisingPromptGroup:RegisterPrompt("Hang a poster",
+                                                                0x4CC0E2FE, 1,
+                                                                1, true, 'hold',
+                                                                {
+    timedeventhash = "MEDIUM_TIMED_EVENT"
+})
+
 -- ===============================
 --          GLOBAL VARS
 -- ===============================
@@ -20,14 +28,91 @@ local pedsCreated = {}
 local blipsCreated = {}
 local SellButtonClicked = ''
 local sell_amount = nil
+local mission_button_clicked = ''
+local MissionActive = false
 -- ===============================
 --          DEV PRINT
 -- ===============================
 local function DevPrint(...) if Config.DevMode then print("[DEV MODE]", ...) end end
 
 -- ===============================
---          NET EVENTS
+--          Mission function
 -- ===============================
+function Advertising_mission(stockName)
+    stockName = mission_button_clicked
+    DevPrint('advertising mission started for: ' .. stockName)
+
+    MissionActive = true
+    DevPrint('Mission active')
+
+    if #Config.Advertising == 0 then
+        DevPrint("[ERROR] No advertising missions configured.")
+        return
+    end
+
+    Core.NotifyObjective('Open your map to locate the mission target.')
+
+    local randomIndex = math.random(1, #Config.Advertising)
+    local selectedMission = Config.Advertising[randomIndex]
+
+    BccUtils.Misc.SetGps(selectedMission.coords.x, selectedMission.coords.y,
+                         selectedMission.coords.z)
+    local mission_blip = BccUtils.Blips:SetBlip('Advertising Mission',
+                                                'blip_wanted_poster', 0.2,
+                                                selectedMission.coords.x,
+                                                selectedMission.coords.y,
+                                                selectedMission.coords.z)
+
+    function HangPoster()
+        local playerPed = PlayerPedId()
+        local animDict = "amb_work@world_human_hammer@wall@male_a@stand_exit"
+        local animName = "exit_front"
+        local hammerModel = GetHashKey("p_hammer01x")
+        local boneIndex = GetPedBoneIndex(playerPed, 16829)
+
+        RequestAnimDict(animDict)
+        while not HasAnimDictLoaded(animDict) do Citizen.Wait(100) end
+
+        RequestModel(hammerModel)
+        while not HasModelLoaded(hammerModel) do Citizen.Wait(100) end
+
+        local hammer = CreateObject(hammerModel, 0.0, 0.0, 0.0, true, true,
+                                    false)
+
+        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.0, -0.1, -0.2,
+                             -50.0, 0.0, 0.0, true, true, false, true, 1, true)
+
+        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 3000, 0, 0,
+                     false, false, false)
+
+        Wait(3000)
+        DeleteObject(hammer)
+        mission_blip:Remove()
+        MissionActive = false
+        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
+    end
+
+    Citizen.CreateThread(function()
+        while MissionActive do
+            Citizen.Wait(1)
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local targetCoords = vector3(selectedMission.coords.x,
+                                         selectedMission.coords.y,
+                                         selectedMission.coords.z)
+
+            if #(playerCoords - targetCoords) < 2.0 then
+                BccUtils.Misc.RemoveGps()
+                AdvertisingPromptGroup:ShowGroup("Stock market mission")
+                if AdvertisingPrompt:HasCompleted() then
+                    AdvertisingPrompt:DeletePrompt()
+                    HangPoster()
+                end
+            end
+        end
+    end)
+
+end
+
 -- ===============================
 --          CREATE PEDS
 -- ===============================
@@ -293,8 +378,7 @@ Citizen.CreateThread(function()
                                sell_amount)
 
             RegisterNetEvent('stocks:SellResult')
-            AddEventHandler('stocks:SellResult',
-                                                 function(success, message)
+            AddEventHandler('stocks:SellResult', function(success, message)
                 if success then
                     -- הודעת הצלחה
                     TriggerEvent("vorp:TipBottom", message, 4000) -- תצוגה של הודעה בצד ימין ל-5 שניות
@@ -335,7 +419,8 @@ Citizen.CreateThread(function()
                     DevPrint('shares owned: ' .. shares)
                     local PlayerShares = shares
                     player_shares_amount:update({
-                        label = 'Your '.. SellButtonClicked .. ' shares: ' .. PlayerShares
+                        label = 'Your ' .. SellButtonClicked .. ' shares: ' ..
+                            PlayerShares
                     })
                 else
                     print("You have no shares in " .. SellButtonClicked)
@@ -353,13 +438,51 @@ Citizen.CreateThread(function()
     -- ===============================
     --          MISSIONS
     -- ===============================
+    local mission_page = StockMenu:RegisterPage('mission:page')
+    local mission_type_select = StockMenu:RegisterPage('mission_type:page')
+
+    mission_page:RegisterElement('header', {
+        value = 'Choose a stock to work for',
+        slot = "header"
+    })
+
+    mission_type_select:RegisterElement('header', {
+        value = 'What type of mission?',
+        slot = 'header'
+    })
+
+    mission_type_select:RegisterElement('button', {
+        label = "Start advertising mission",
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function()
+        if not MissionActive then
+            Advertising_mission(mission_button_clicked)
+        else
+            Core.NotifyObjective('Mission already active')
+        end
+    end)
+
+    for index, v in ipairs(Config.Categories) do
+        mission_page:RegisterElement('button', {
+            label = v,
+            style = {},
+            sound = {
+                action = "SELECT",
+                soundset = "RDRO_Character_Creator_Sounds"
+            },
+            id = v
+        }, function(data)
+            mission_button_clicked = data.id
+            mission_type_select:RouteTo()
+        end)
+    end
+
     StockMenuFirstPage:RegisterElement('button', {
         label = "Missions",
         style = {},
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
-    }, function()
-        -- This gets triggered whenever the button is clicked
-    end)
+    }, function() mission_page:RouteTo() end)
+
 end)
 
 -- open menu
@@ -387,4 +510,6 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     for _, npcs in ipairs(pedsCreated) do npcs:Remove() end
     for _, blips in ipairs(blipsCreated) do blips:Remove() end
+    MissionActive = false
+    DevPrint('Removed NPC and blips')
 end)
