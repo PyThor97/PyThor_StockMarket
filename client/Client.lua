@@ -6,6 +6,13 @@ local Animations = exports.vorp_animations.initiate()
 local FeatherMenu = exports['feather-menu'].initiate()
 local BccUtils = exports['bcc-utils'].initiate()
 local progressbar = exports.vorp_progressbar:initiate()
+local MiniGame = exports['bcc-minigames'].initiate()
+local HammerMinigameCFG = {
+    focus = true, -- Should minigame take nui focus (required)
+    cursor = true, -- Should minigame have cursor  (required)
+    nails = 5, -- How many nails to be hammered
+    type = 'dark-wood' -- What color wood to display (light-wood, medium-wood, dark-wood)
+}
 -- ===============================
 --          PROMPTS
 -- ===============================
@@ -15,7 +22,7 @@ local Stockprompt = StockMenuPrompt:RegisterPrompt("Invest in stock",
                                                    'click')
 local AdvertisingPromptGroup = BccUtils.Prompt:SetupPromptGroup()
 local AdvertisingPrompt = AdvertisingPromptGroup:RegisterPrompt("Hang a poster",
-                                                                0x4CC0E2FE, 1,
+                                                                0x760A9C6F, 1,
                                                                 1, true, 'hold',
                                                                 {
     timedeventhash = "MEDIUM_TIMED_EVENT"
@@ -57,18 +64,24 @@ function Advertising_mission(stockName)
 
     BccUtils.Misc.SetGps(selectedMission.coords.x, selectedMission.coords.y,
                          selectedMission.coords.z)
+
     local mission_blip = BccUtils.Blips:SetBlip('Advertising Mission',
                                                 'blip_wanted_poster', 0.2,
                                                 selectedMission.coords.x,
                                                 selectedMission.coords.y,
                                                 selectedMission.coords.z)
 
+    local blipMod = BccUtils.Blips:AddBlipModifier(mission_blip,
+                                                   'BLIP_MODIFIER_DEBUG_YELLOW')
+
+    blipMod:ApplyModifier()
+
     function HangPoster()
         local playerPed = PlayerPedId()
         local animDict = "amb_work@world_human_hammer@wall@male_a@stand_exit"
         local animName = "exit_front"
         local hammerModel = GetHashKey("p_hammer01x")
-        local boneIndex = GetPedBoneIndex(playerPed, 16829)
+        local boneIndex = GetPedBoneIndex(playerPed, 16828)
 
         RequestAnimDict(animDict)
         while not HasAnimDictLoaded(animDict) do Citizen.Wait(100) end
@@ -79,16 +92,23 @@ function Advertising_mission(stockName)
         local hammer = CreateObject(hammerModel, 0.0, 0.0, 0.0, true, true,
                                     false)
 
-        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.0, -0.1, -0.2,
+        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.04, -0.08, -0.2,
                              -50.0, 0.0, 0.0, true, true, false, true, 1, true)
-
-        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 3000, 0, 0,
+        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.04, -0.08, -0.2,
+                             -50.0, 0.0, 0.0, true, true, false, true, 1, true)
+        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
                      false, false, false)
 
-        Wait(3000)
+        MiniGame.Start('hammertime', HammerMinigameCFG, function() end)
+
         DeleteObject(hammer)
+
         mission_blip:Remove()
+
         MissionActive = false
+
+        Wait(5000)
+
         TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
     end
 
