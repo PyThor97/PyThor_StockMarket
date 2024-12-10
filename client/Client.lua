@@ -8,10 +8,10 @@ local BccUtils = exports['bcc-utils'].initiate()
 local progressbar = exports.vorp_progressbar:initiate()
 local MiniGame = exports['bcc-minigames'].initiate()
 local HammerMinigameCFG = {
-    focus = true, -- Should minigame take nui focus (required)
-    cursor = true, -- Should minigame have cursor  (required)
-    nails = 5, -- How many nails to be hammered
-    type = 'dark-wood' -- What color wood to display (light-wood, medium-wood, dark-wood)
+    focus = true,
+    cursor = true,
+    nails = 5,
+    type = 'dark-wood'
 }
 -- ===============================
 --          PROMPTS
@@ -28,23 +28,31 @@ local AdvertisingPrompt = AdvertisingPromptGroup:RegisterPrompt("Hang a poster",
     timedeventhash = "MEDIUM_TIMED_EVENT"
 })
 
+local RecruitingPromptGroup = BccUtils.Prompt:SetupPromptGroup()
+local RecrutingPrompt = RecruitingPromptGroup:RegisterPrompt(
+                            "Recruit this person", 0x760A9C6F, 1, 1, true,
+                            'hold', {timedeventhash = "MEDIUM_TIMED_EVENT"})
+
 -- ===============================
 --          GLOBAL VARS
 -- ===============================
+
 local pedsCreated = {}
 local blipsCreated = {}
 local SellButtonClicked = ''
 local sell_amount = nil
 local mission_button_clicked = ''
 local MissionActive = false
+
 -- ===============================
---          DEV PRINT
+--          DEV PRINT FUNC
 -- ===============================
 local function DevPrint(...) if Config.DevMode then print("[DEV MODE]", ...) end end
 
 -- ===============================
---          Mission function
+--          Mission functions
 -- ===============================
+
 function Advertising_mission(stockName)
     stockName = mission_button_clicked
     DevPrint('advertising mission started for: ' .. stockName)
@@ -133,6 +141,83 @@ function Advertising_mission(stockName)
 
 end
 
+function Recruit_misssion(stockName)
+    stockName = mission_button_clicked
+    DevPrint('Recruit misssion started for: ' .. stockName)
+    MissionActive = true
+
+    Core.NotifyObjective('Open your map to locate the mission target.')
+
+    local randomIndex = math.random(1, #Config.Recruting)
+    local selectedMission = Config.Recruting[randomIndex]
+
+    BccUtils.Misc.SetGps(selectedMission.coords.x, selectedMission.coords.y,
+                         selectedMission.coords.z)
+
+    local mission_blip = BccUtils.Blips:SetBlip('Recruit Mission',
+                                                'blip_gunslinger', 0.2,
+                                                selectedMission.coords.x,
+                                                selectedMission.coords.y,
+                                                selectedMission.coords.z)
+
+    local blipMod = BccUtils.Blips:AddBlipModifier(mission_blip,
+                                                   'BLIP_MODIFIER_DEBUG_YELLOW')
+
+    blipMod:ApplyModifier()
+
+    local recruit_ped = BccUtils.Ped:Create('u_f_m_tumgeneralstoreowner_01',
+                                            selectedMission.coords.x,
+                                            selectedMission.coords.y,
+                                            selectedMission.coords.z, 0,
+                                            'world', false)
+
+    recruit_ped:Freeze()
+    recruit_ped:CanBeDamaged()
+    recruit_ped:SetHeading(selectedMission.heading)
+
+    function Recruit_person()
+        local playerPed = PlayerPedId()
+        local animDict = "ai_gestures@gen_female@standing@silent@script"
+        local animName = "silent_dirty_hands_l_001"
+
+        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
+                     false, false, false)
+
+        mission_blip:Remove()
+    end
+
+    local function checkPedState()
+        if recruit_ped:IsDead() then
+            DevPrint('ped is: '.. recruit_ped:IsDead())
+            Core.NotifyObjective('The recruit is dead. Mission failed')
+            MissionActive = false
+        end
+    end
+
+    Citizen.CreateThread(function()
+        while MissionActive do
+            Citizen.Wait(1)
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local targetCoords = vector3(selectedMission.coords.x,
+                                         selectedMission.coords.y,
+                                         selectedMission.coords.z)
+
+            if #(playerCoords - targetCoords) < 2.0 then
+                checkPedState()
+                BccUtils.Misc.RemoveGps()
+                RecruitingPromptGroup:ShowGroup("Stock market mission")
+                if RecrutingPrompt:HasCompleted() and MissionActive and not checkPedState() then
+                    Recruit_person()
+                    RecrutingPrompt:DeletePrompt()
+                else
+                    Core.NotifyObjective('Mission failed')
+                end
+            end
+        end
+    end)
+
+end
+
 -- ===============================
 --          CREATE PEDS
 -- ===============================
@@ -160,11 +245,11 @@ Citizen.CreateThread(function()
     end
 end)
 
--- Create the menu
+-- ===============================
+--          MAIN MENU
+-- ===============================
 Citizen.CreateThread(function()
-    -- ===============================
-    --          MAIN MENU
-    -- ===============================
+
     StockMenu = FeatherMenu:RegisterMenu('Stock:main', {
         top = '40%',
         left = '20%',
@@ -477,6 +562,17 @@ Citizen.CreateThread(function()
     }, function()
         if not MissionActive then
             Advertising_mission(mission_button_clicked)
+        else
+            Core.NotifyObjective('Mission already active')
+        end
+    end)
+
+    mission_type_select:RegisterElement('button', {
+        label = "Start recruiting mission",
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function()
+        if not MissionActive then
+            Recruit_misssion(mission_button_clicked)
         else
             Core.NotifyObjective('Mission already active')
         end
