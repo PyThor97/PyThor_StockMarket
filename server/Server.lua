@@ -260,6 +260,6 @@ local contributionPoints  = Config.AdValue
         {playerIdentifier, character.firstname .. " " .. character.lastname, stockName, contributionPoints or 0}
     )
     -- הודעה ללקוח שהפעולה בוצעה
-    TriggerClientEvent("vorp:TipRight", src, "Stock value increased by: " .. contributionPoints, 5000)
+    Core.NotifySimpleTop(src, stockName .. ' value incresed by: '.. contributionPoints, "Well done.", 5000)
     print("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
 end)

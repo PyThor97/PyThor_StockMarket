@@ -42,7 +42,7 @@ local blipsCreated = {}
 local SellButtonClicked = ''
 local sell_amount = nil
 local mission_button_clicked = ''
-local MissionActive = false
+local IsMissionActive = false
 
 -- ===============================
 --          DEV PRINT FUNC
@@ -56,16 +56,13 @@ local function DevPrint(...) if Config.DevMode then print("[DEV MODE]", ...) end
 function Advertising_mission(stockName)
     stockName = mission_button_clicked
     DevPrint('advertising mission started for: ' .. stockName)
-
-    MissionActive = true
-    DevPrint('Mission active')
-
+    
     if #Config.Advertising == 0 then
         DevPrint("[ERROR] No advertising missions configured.")
         return
     end
 
-    Core.NotifyObjective('Open your map to locate the mission target.')
+    Core.NotifyObjective('Open your map to locate the mission target.',4000)
 
     local randomIndex = math.random(1, #Config.Advertising)
     local selectedMission = Config.Advertising[randomIndex]
@@ -102,8 +99,6 @@ function Advertising_mission(stockName)
 
         AttachEntityToEntity(hammer, playerPed, boneIndex, 0.04, -0.08, -0.2,
                              -50.0, 0.0, 0.0, true, true, false, true, 1, true)
-        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.04, -0.08, -0.2,
-                             -50.0, 0.0, 0.0, true, true, false, true, 1, true)
         TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
                      false, false, false)
 
@@ -113,40 +108,36 @@ function Advertising_mission(stockName)
 
         mission_blip:Remove()
 
-        MissionActive = false
-
         Wait(5000)
 
         TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
     end
 
-    Citizen.CreateThread(function()
-        while MissionActive do
-            Citizen.Wait(1)
-            local playerCoords = GetEntityCoords(PlayerPedId())
-            local targetCoords = vector3(selectedMission.coords.x,
-                                         selectedMission.coords.y,
-                                         selectedMission.coords.z)
+    while IsMissionActive do
+        Citizen.Wait(1)
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local targetCoords = vector3(selectedMission.coords.x,
+                                     selectedMission.coords.y,
+                                     selectedMission.coords.z)
 
-            if #(playerCoords - targetCoords) < 2.0 then
-                BccUtils.Misc.RemoveGps()
-                AdvertisingPromptGroup:ShowGroup("Stock market mission")
-                if AdvertisingPrompt:HasCompleted() then
-                    AdvertisingPrompt:DeletePrompt()
-                    HangPoster()
-                end
+        if #(playerCoords - targetCoords) < 1.0 then
+            BccUtils.Misc.RemoveGps()
+            AdvertisingPromptGroup:ShowGroup("Hang a poster")
+            AdvertisingPrompt:TogglePrompt(true)
+            if AdvertisingPrompt:HasCompleted() then
+                AdvertisingPrompt:TogglePrompt(false)
+                HangPoster()
+                IsMissionActive = false
             end
         end
-    end)
-
+    end
 end
 
 function Recruit_misssion(stockName)
     stockName = mission_button_clicked
     DevPrint('Recruit misssion started for: ' .. stockName)
-    MissionActive = true
 
-    Core.NotifyObjective('Open your map to locate the mission target.')
+    Core.NotifyObjective('Open your map to locate the mission target.', 4000)
 
     local randomIndex = math.random(1, #Config.Recruting)
     local selectedMission = Config.Recruting[randomIndex]
@@ -168,9 +159,9 @@ function Recruit_misssion(stockName)
     local recruit_ped = BccUtils.Ped:Create('u_f_m_tumgeneralstoreowner_01',
                                             selectedMission.coords.x,
                                             selectedMission.coords.y,
-                                            selectedMission.coords.z, 0,
+                                            selectedMission.coords.z - 1, 0,
                                             'world', false)
-
+    recruit_ped:Invincible()
     recruit_ped:Freeze()
     recruit_ped:CanBeDamaged()
     recruit_ped:SetHeading(selectedMission.heading)
@@ -182,41 +173,33 @@ function Recruit_misssion(stockName)
 
         TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
                      false, false, false)
-
+        Wait(5000)
         mission_blip:Remove()
+        recruit_ped:Remove()
+        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
     end
 
-    local function checkPedState()
-        if recruit_ped:IsDead() then
-            DevPrint('ped is: '.. recruit_ped:IsDead())
-            Core.NotifyObjective('The recruit is dead. Mission failed')
-            MissionActive = false
-        end
-    end
+    while IsMissionActive do
+        Citizen.Wait(1)
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local targetCoords = vector3(selectedMission.coords.x,
+                                     selectedMission.coords.y,
+                                     selectedMission.coords.z)
 
-    Citizen.CreateThread(function()
-        while MissionActive do
-            Citizen.Wait(1)
-            local playerCoords = GetEntityCoords(PlayerPedId())
-            local targetCoords = vector3(selectedMission.coords.x,
-                                         selectedMission.coords.y,
-                                         selectedMission.coords.z)
-
-            if #(playerCoords - targetCoords) < 2.0 then
-                checkPedState()
-                BccUtils.Misc.RemoveGps()
-                RecruitingPromptGroup:ShowGroup("Stock market mission")
-                if RecrutingPrompt:HasCompleted() and MissionActive and not checkPedState() then
-                    Recruit_person()
-                    RecrutingPrompt:DeletePrompt()
-                else
-                    Core.NotifyObjective('Mission failed')
-                end
+        if #(playerCoords - targetCoords) < 1.0 then
+            BccUtils.Misc.RemoveGps()
+            RecruitingPromptGroup:ShowGroup("Stock market mission")
+            RecrutingPrompt:TogglePrompt(true)
+            if RecrutingPrompt:HasCompleted() then
+                RecrutingPrompt:TogglePrompt(false)
+                Recruit_person()
+                IsMissionActive = false
             end
         end
-    end)
-
+    end
 end
+
+function Info_mission() end
 
 -- ===============================
 --          CREATE PEDS
@@ -560,10 +543,12 @@ Citizen.CreateThread(function()
         label = "Start advertising mission",
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function()
-        if not MissionActive then
+        if not IsMissionActive then
+            IsMissionActive = true
+            DevPrint('mission status: ' .. tostring(IsMissionActive))
             Advertising_mission(mission_button_clicked)
         else
-            Core.NotifyObjective('Mission already active')
+            Core.NotifyObjective('Mission already active',4000)
         end
     end)
 
@@ -571,10 +556,12 @@ Citizen.CreateThread(function()
         label = "Start recruiting mission",
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function()
-        if not MissionActive then
+        if not IsMissionActive then
+            IsMissionActive = true
+            DevPrint('mission status: '.. tostring(IsMissionActive))
             Recruit_misssion(mission_button_clicked)
         else
-            Core.NotifyObjective('Mission already active')
+            Core.NotifyObjective('Mission already active', 4000)
         end
     end)
 
@@ -626,6 +613,8 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     for _, npcs in ipairs(pedsCreated) do npcs:Remove() end
     for _, blips in ipairs(blipsCreated) do blips:Remove() end
-    MissionActive = false
+    AD_MissionActive = false
+    REC_MissionActive = false
+    INFO_MissionActive = false
     DevPrint('Removed NPC and blips')
 end)
