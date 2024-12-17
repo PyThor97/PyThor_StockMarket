@@ -2,10 +2,8 @@
 --         IMPORT TOOLS
 -- ===============================
 local Core = exports.vorp_core:GetCore()
-local Animations = exports.vorp_animations.initiate()
 local FeatherMenu = exports['feather-menu'].initiate()
 local BccUtils = exports['bcc-utils'].initiate()
-local progressbar = exports.vorp_progressbar:initiate()
 local MiniGame = exports['bcc-minigames'].initiate()
 local HammerMinigameCFG = {
     focus = true,
@@ -20,6 +18,7 @@ local StockMenuPrompt = BccUtils.Prompts:SetupPromptGroup()
 local Stockprompt = StockMenuPrompt:RegisterPrompt("Invest in stock",
                                                    0x760A9C6F, 1, 1, true,
                                                    'click')
+
 local AdvertisingPromptGroup = BccUtils.Prompt:SetupPromptGroup()
 local AdvertisingPrompt = AdvertisingPromptGroup:RegisterPrompt("Hang a poster",
                                                                 0x760A9C6F, 1,
@@ -33,10 +32,14 @@ local RecrutingPrompt = RecruitingPromptGroup:RegisterPrompt(
                             "Recruit this person", 0x760A9C6F, 1, 1, true,
                             'hold', {timedeventhash = "MEDIUM_TIMED_EVENT"})
 
+local InfoPromptGroup = BccUtils.Prompt:SetupPromptGroup()
+local InfoPrompt = InfoPromptGroup:RegisterPrompt("Extract Info", 0x760A9C6F, 1,
+                                                  1, true, 'hold', {
+    timedeventhash = "MEDIUM_TIMED_EVENT"
+})
 -- ===============================
 --          GLOBAL VARS
 -- ===============================
-
 local pedsCreated = {}
 local blipsCreated = {}
 local SellButtonClicked = ''
@@ -56,13 +59,13 @@ local function DevPrint(...) if Config.DevMode then print("[DEV MODE]", ...) end
 function Advertising_mission(stockName)
     stockName = mission_button_clicked
     DevPrint('advertising mission started for: ' .. stockName)
-    
+
     if #Config.Advertising == 0 then
         DevPrint("[ERROR] No advertising missions configured.")
         return
     end
 
-    Core.NotifyObjective('Open your map to locate the mission target.',4000)
+    Core.NotifyObjective('Open your map to locate the mission target.', 4000)
 
     local randomIndex = math.random(1, #Config.Advertising)
     local selectedMission = Config.Advertising[randomIndex]
@@ -110,7 +113,9 @@ function Advertising_mission(stockName)
 
         Wait(5000)
 
-        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
+        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
+                           'AD')
+
     end
 
     while IsMissionActive do
@@ -131,6 +136,7 @@ function Advertising_mission(stockName)
             end
         end
     end
+
 end
 
 function Recruit_misssion(stockName)
@@ -176,7 +182,8 @@ function Recruit_misssion(stockName)
         Wait(5000)
         mission_blip:Remove()
         recruit_ped:Remove()
-        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked)
+        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
+                           'Recruit')
     end
 
     while IsMissionActive do
@@ -186,9 +193,10 @@ function Recruit_misssion(stockName)
                                      selectedMission.coords.y,
                                      selectedMission.coords.z)
 
-        if #(playerCoords - targetCoords) < 1.0 then
+        if #(playerCoords - targetCoords) < 2.0 then
+
             BccUtils.Misc.RemoveGps()
-            RecruitingPromptGroup:ShowGroup("Stock market mission")
+            RecruitingPromptGroup:ShowGroup("My first prompt group")
             RecrutingPrompt:TogglePrompt(true)
             if RecrutingPrompt:HasCompleted() then
                 RecrutingPrompt:TogglePrompt(false)
@@ -199,12 +207,67 @@ function Recruit_misssion(stockName)
     end
 end
 
-function Info_mission() end
+function Info_mission(stockName)
+    stockName = mission_button_clicked
+    DevPrint('Info extraction misssion started for: ' .. stockName)
+
+    Core.NotifyObjective('Open your map to locate the mission target.', 4000)
+
+    local randomIndex = math.random(1, #Config.infoExtracting)
+    local selectedMission = Config.infoExtracting[randomIndex]
+
+    BccUtils.Misc.SetGps(selectedMission.coords.x, selectedMission.coords.y,
+                         selectedMission.coords.z)
+
+    local mission_blip = BccUtils.Blips:SetBlip('Info extraction Mission',
+                                                'blip_radius_search', 0.3,
+                                                selectedMission.coords.x,
+                                                selectedMission.coords.y,
+                                                selectedMission.coords.z)
+
+    local blipMod = BccUtils.Blips:AddBlipModifier(mission_blip,
+                                                   'BLIP_MODIFIER_DEBUG_YELLOW')
+
+    blipMod:ApplyModifier()
+
+    function ExtractInfo()
+        local playerPed = PlayerPedId()
+        local scenario_name = 'WORLD_HUMAN_WRITE_NOTEBOOK'
+
+        TaskStartScenarioInPlace(playerPed, scenario_name, 5, true)
+
+        mission_blip:Remove()
+
+        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
+                           'Info')
+
+        IsMissionActive = false
+    end
+
+    while IsMissionActive do
+        Citizen.Wait(1)
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local targetCoords = vector3(selectedMission.coords.x,
+                                     selectedMission.coords.y,
+                                     selectedMission.coords.z)
+
+        if #(playerCoords - targetCoords) < 2.0 then
+            BccUtils.Misc.RemoveGps()
+            InfoPromptGroup:ShowGroup("Stock market mission")
+            InfoPrompt:TogglePrompt(true)
+            if InfoPrompt:HasCompleted() then
+                InfoPrompt:TogglePrompt(false)
+                ExtractInfo()
+                IsMissionActive = false
+            end
+        end
+    end
+end
 
 -- ===============================
 --          CREATE PEDS
 -- ===============================
-Citizen.CreateThread(function()
+function CreatePeds()
     for _, value in ipairs(Config.Locations) do
         local StockPed = BccUtils.Ped:Create(value.ped, value.coords.x,
                                              value.coords.y, value.coords.z - 1,
@@ -215,18 +278,20 @@ Citizen.CreateThread(function()
         StockPed:Invincible()
     end
     DevPrint('Peds created')
-end)
-
+end
+CreatePeds()
 -- ===============================
 --          CREATE BLIPS
 -- ===============================
-Citizen.CreateThread(function()
+
+function CreateBlips()
     for _, v in pairs(Config.Locations) do
         local blip = BccUtils.Blips:SetBlip('Stock Market', v.BlipSprite, 3.2,
                                             v.coords.x, v.coords.y, v.coords.z)
         blipsCreated[#blipsCreated + 1] = blip
     end
-end)
+end
+CreateBlips()
 
 -- ===============================
 --          MAIN MENU
@@ -369,12 +434,12 @@ Citizen.CreateThread(function()
         sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
     }, function()
         if not amount_to_buy or amount_to_buy <= 0 then
-            Core.NotifyTip("Please select a valid amount.", 4000)
+            Core.NotifyObjective("title", 4000)
             return
         end
 
         if not ButtonClicked or ButtonClicked == '' then
-            Core.NotifyTip("Please select a stock category.", 4000)
+            Core.NotifyObjective("title", 4000)
             return
         end
 
@@ -385,8 +450,10 @@ Citizen.CreateThread(function()
         RegisterNetEvent('stocks:BuyResult')
         AddEventHandler('stocks:BuyResult', function(success, message)
             if success then
+                DevPrint(message)
                 Core.NotifyObjective(message, 4000)
             else
+                DevPrint(message)
                 Core.NotifyObjective(message, 4000)
             end
         end)
@@ -468,11 +535,9 @@ Citizen.CreateThread(function()
             RegisterNetEvent('stocks:SellResult')
             AddEventHandler('stocks:SellResult', function(success, message)
                 if success then
-                    -- הודעת הצלחה
-                    TriggerEvent("vorp:TipBottom", message, 4000) -- תצוגה של הודעה בצד ימין ל-5 שניות
+                    Core.NotifyObjective(message, 4000)
                 else
-                    -- הודעת שגיאה
-                    TriggerEvent("vorp:TipBottom", message, 4000) -- תצוגה של הודעה בתחתית ל-5 שניות
+                    Core.NotifyObjective(message, 4000)
                 end
             end)
 
@@ -548,7 +613,7 @@ Citizen.CreateThread(function()
             DevPrint('mission status: ' .. tostring(IsMissionActive))
             Advertising_mission(mission_button_clicked)
         else
-            Core.NotifyObjective('Mission already active',4000)
+            Core.NotifyObjective('Mission already active', 4000)
         end
     end)
 
@@ -558,8 +623,21 @@ Citizen.CreateThread(function()
     }, function()
         if not IsMissionActive then
             IsMissionActive = true
-            DevPrint('mission status: '.. tostring(IsMissionActive))
+            DevPrint('mission status: ' .. tostring(IsMissionActive))
             Recruit_misssion(mission_button_clicked)
+        else
+            Core.NotifyObjective('Mission already active', 4000)
+        end
+    end)
+
+    mission_type_select:RegisterElement('button', {
+        label = "Start Info extraction mission",
+        sound = {action = "SELECT", soundset = "RDRO_Character_Creator_Sounds"}
+    }, function()
+        if not IsMissionActive then
+            IsMissionActive = true
+            DevPrint('mission status: ' .. tostring(IsMissionActive))
+            Info_mission(mission_button_clicked)
         else
             Core.NotifyObjective('Mission already active', 4000)
         end
@@ -588,7 +666,9 @@ Citizen.CreateThread(function()
 
 end)
 
--- open menu
+-- ========================
+--      OPEN MENU 
+-- ========================
 Citizen.CreateThread(function()
     local menuIsOpen = false
     while true and not menuIsOpen do
@@ -613,8 +693,6 @@ end)
 AddEventHandler('onResourceStop', function(resourceName)
     for _, npcs in ipairs(pedsCreated) do npcs:Remove() end
     for _, blips in ipairs(blipsCreated) do blips:Remove() end
-    AD_MissionActive = false
-    REC_MissionActive = false
-    INFO_MissionActive = false
+    IsMissionActive = false
     DevPrint('Removed NPC and blips')
 end)

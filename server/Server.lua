@@ -1,4 +1,5 @@
 local Core = exports.vorp_core:GetCore()
+local BccUtils = exports['bcc-utils'].initiate()
 
 local function ConsolePrint(...)
     if Config.DevMode then print("[DEV MODE]", ...) end
@@ -72,14 +73,21 @@ AddEventHandler('stocks:BuyShares', function(stockName, quantity)
         stockName, quantity
     })
 
-    -- החזרת תגובה ללקוח
     TriggerClientEvent('stocks:BuyResult', src, true,
                        "Bought " .. quantity .. " shares of " .. stockName)
+
+    BccUtils.Discord.sendMessage(Config.WebHooks.Buy, 'PyThor_StockMarket',
+                                 'https://cdn2.iconfinder.com/data/icons/frosted-glass/256/Danger.png',
+                                 character.firstname .. " " ..
+                                     character.lastname .. ' has bought ' ..
+                                     quantity .. ' in: ' .. stockName ..
+                                     ' for: ' .. totalPrice .. '$')
+
 end)
 
---==========================
---- Get players shares
---==========================
+-- ==========================
+---     Get players shares
+-- ==========================
 RegisterNetEvent('stocks:GetPlayerStocks')
 AddEventHandler('stocks:GetPlayerStocks', function()
     local src = source
@@ -103,7 +111,7 @@ AddEventHandler('stocks:GetPlayerStocks', function()
 end)
 
 -- ====================================
---          GET PLAYER SHARES COUNT
+--      GET PLAYER SHARES COUNT
 -- ====================================
 RegisterNetEvent('stocks:GetPlayerShares')
 AddEventHandler('stocks:GetPlayerShares', function(stockName)
@@ -164,15 +172,15 @@ AddEventHandler('stocks:SellShares', function(stockName, quantity)
     end
 
     -- הגדר מחירי רווח והפסד מהקונפיג
-    local profitAmount = Config.ProfitAmount or 10 -- רווח לדוגמה
-    local buyPrice = Config.BuyPrice or 100 -- מחיר הבסיס לדוגמה
+    local profitAmount = Config.ProfitPerPrecent -- רווח לדוגמה
+    local buyPrice = Config.BuyPrice -- מחיר הבסיס לדוגמה
+    local amountIncresed = stockValue - 100
     local sellPrice = 0
 
-    -- תנאי לחשב את הסכום
+
     if stockValue >= 100 then
-        sellPrice = buyPrice + (quantity * profitAmount)
+        sellPrice = (buyPrice * quantity) + (profitAmount * amountIncresed)
     else
-        -- כאן תוכל להוסיף תנאי למכירה בהפסד אם המניה פחות מ-100
         TriggerClientEvent('stocks:SellResult', src, false,
                            "There is no demend for that stock")
         return
@@ -190,6 +198,13 @@ AddEventHandler('stocks:SellShares', function(stockName, quantity)
     TriggerClientEvent('stocks:SellResult', src, true,
                        "Sold " .. quantity .. " shares of " .. stockName ..
                            " for $" .. math.floor(sellPrice))
+
+    BccUtils.Discord.sendMessage(Config.WebHooks.Sell, 'PyThor_StockMarket',
+                                 'https://cdn2.iconfinder.com/data/icons/frosted-glass/256/Danger.png',
+                                 character.firstname .. " " ..
+                                     character.lastname .. ' has sold ' ..
+                                     quantity .. ' in: ' .. stockName ..
+                                     ' for: ' .. sellPrice .. '$')
 end)
 
 -- ===============================
@@ -197,19 +212,17 @@ end)
 -- ===============================
 RegisterNetEvent('stocks:GetStockValue')
 AddEventHandler('stocks:GetStockValue', function(stockName)
-    local src = source -- מזהה השחקן ששלח את הבקשה
+    local src = source
     if not stockName then
         print("[ERROR] No stock name provided.")
-        TriggerClientEvent('stocks:ReturnStockValue', src, nil) -- מחזיר NIL
+        TriggerClientEvent('stocks:ReturnStockValue', src, nil)
         return
     end
 
-    -- שליפת ערך המניה מתוך הטבלה
     local stockValue = MySQL.scalar.await(
                            'SELECT `stock_value` FROM `pythor_stocks` WHERE `stock_name` = ?',
-                           {stockName}) or 0 -- ברירת מחדל לערך 0 אם לא נמצא
+                           {stockName}) or 0
 
-    -- שליחת הערך חזרה לצד הלקוח
     TriggerClientEvent('stocks:ReturnStockValue', src, stockValue)
     print("[INFO] Sent stock value:", stockValue, "for stock:", stockName)
 end)
@@ -217,25 +230,28 @@ end)
 -- ===============================
 --      INCREASE STOCK VALUE
 -- ===============================
--- אירוע לקבלת הבקשה מצד הלקוח
 RegisterNetEvent('stocks:IncreaseStockValue')
-AddEventHandler('stocks:IncreaseStockValue', function(stockName)
+AddEventHandler('stocks:IncreaseStockValue', function(stockName, mission_type)
     local src = source
-local user = Core.getUser(src)
-local character = user.getUsedCharacter
-local playerIdentifier = character.identifier
-local contributionPoints  = Config.AdValue
+    local user = Core.getUser(src)
+    local character = user.getUsedCharacter
+    local playerIdentifier = character.identifier
+    local contributionPoints
+
+    if mission_type == 'AD' then contributionPoints = Config.AdValue end
+
+    if mission_type == 'Recruit' then contributionPoints = Config.RecValue end
+
+    if mission_type == 'Info' then contributionPoints = Config.InfoValue end
 
     if not stockName then
         print("[ERROR] Missing stock name or value increase from client.")
         return
     end
 
-    -- חישוב הערך החדש
     local currentStockValue = MySQL.scalar.await(
-        'SELECT stock_value FROM pythor_stocks WHERE stock_name = ?',
-        {stockName}
-    )
+                                  'SELECT stock_value FROM pythor_stocks WHERE stock_name = ?',
+                                  {stockName})
 
     if not currentStockValue then
         print("[ERROR] Stock not found: " .. tostring(stockName))
@@ -245,21 +261,29 @@ local contributionPoints  = Config.AdValue
 
     local newStockValue = currentStockValue + contributionPoints
 
-    -- עדכון הערך במסד הנתונים
     MySQL.update.await(
         'UPDATE pythor_stocks SET stock_value = ? WHERE stock_name = ?',
-        {newStockValue, stockName}
-    )
-    local updateSuccess = MySQL.update.await(
-        [[
+        {newStockValue, stockName})
+    local updateSuccess = MySQL.update.await([[
         INSERT INTO player_stocks (player_identifier, character_name, stock_name, contribution)
         VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE
             contribution = contribution + VALUES(contribution)
-        ]],
-        {playerIdentifier, character.firstname .. " " .. character.lastname, stockName, contributionPoints or 0}
-    )
-    -- הודעה ללקוח שהפעולה בוצעה
-    Core.NotifySimpleTop(src, stockName .. ' value incresed by: '.. contributionPoints, "Well done.", 5000)
+        ]], {
+        playerIdentifier, character.firstname .. " " .. character.lastname,
+        stockName, contributionPoints or 0
+    })
+    Core.NotifySimpleTop(src, stockName .. ' value incresed by: ' ..
+                             contributionPoints, "Well done.", 5000)
+
+    BccUtils.Discord.sendMessage(Config.WebHooks.Mission, 'PyThor_StockMarket',
+                                 'https://cdn2.iconfinder.com/data/icons/frosted-glass/256/Danger.png',
+                                 character.firstname .. " " ..
+                                     character.lastname ..
+                                     ' has finished a mission ' .. mission_type ..
+                                     ' in: ' .. stockName ..
+                                     ' and increased the value by ' ..
+                                     contributionPoints .. '%')
+
     print("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
 end)

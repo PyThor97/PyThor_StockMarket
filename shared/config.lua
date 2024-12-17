@@ -1,14 +1,30 @@
 Config = {}
 
-Config.DevMode = true
+--[[
+=====================================
+--       PyThor_StockMarket GUIDE
+--=====================================
+This script intreduce in depth stock market system 
+you can add more locations and change the rewards of each mission
+by default the value of the stocks will change every day in the DB to change it you will need to change 
+the SQL event provided in the shared folder more info there.
+]]
 
-Config.Settings = {randomValues = true, minValue = -50, maxValue = 200}
+-- ========================
+--        Config
+-- ========================
+Config.DevMode = false
 
-Config.DBupdateInterval = {intervalDays = 7, resetPlayerInfluence = true}
+Config.WebHooks = {
 
--- stock Locations
+    Sell = 'https://discord.com/api/webhooks/1317490814888316959/9rkaFsDysYhKv8AUsrBfT1if8kGaU_BPUkx1ReysGjALQG5Q55YKJFIMq9BoXfFPBKpG',
+    Buy = 'https://discord.com/api/webhooks/1317490702304673874/FuBoyRnFCtsyLt1ZVV9OAMUMvudhMLZac0CKpooG07j45xnm4KtplFnhkfrxI54hks53',
+    Mission = 'https://discord.com/api/webhooks/1317490977916715038/Pf-asteW_-ua_L51-Eg48Fb62rZhXl8APsBLTYvmhqS8Q_loFD_T8gD8YW0J5vCRlx17'
+
+}
+-- stock Locations, you can add more
 Config.Locations = {
-    {
+    { -- Valentine
         Blip = true,
         BlipSprite = 'blip_robbery_bank',
         BlipName = 'Valentine Stock Market',
@@ -16,7 +32,8 @@ Config.Locations = {
         NpcHeading = 320.12,
         ped = 'a_m_m_htlfancytravellers_01',
         distance = 2
-    }, { -- Rhodes
+    },
+    { -- Rhodes
         Blip = true,
         BlipSprite = 'blip_robbery_bank',
         BlipName = 'Rhodes Stock Market',
@@ -27,55 +44,55 @@ Config.Locations = {
     }
 }
 
+-- You can add or remove categories make sure to update DB as well
 Config.Categories = {'Train', 'Oil', 'Spices', 'Gold'}
 
--- Base price for a share
+-- How much the player will pay for 1 share
 Config.BuyPrice = 100
 
--- how much to profit per precent
+-- how much to profit per precent (Can't profit while the stock under 100%)
 Config.ProfitPerPrecent = 10
 
--- missions
+-- Missions, you can add more locations
 Config.Advertising = {
 
-    {id = 1, coords = vector3(-182.72, 584.77, 113.42)},
-    {id = 2, coords = vector3(-191.61, 563.51, 113.79)},
-    {id = 3, coords = vector3(1381.95, -1403.74, 79.3)},
-    {id = 4, coords = vector3(1381.95, -1403.74, 79.3)}
+    {coords = vector3(-182.72, 584.77, 113.42)},
+    {coords = vector3(-191.61, 563.51, 113.79)},
+    {coords = vector3(1381.95, -1403.74, 79.3)},
+    {coords = vector3(1381.95, -1403.74, 79.3)}
 
 }
+
 -- Value for all Advertising missions or a set number
 Config.AdValue = math.random(1, 5)
 
+-- Recruiting missions
 Config.Recruting = {
     {
         coords = vector3(-240.88, 618.2, 113.36),
         heading = 265.57,
-        ped = 'cs_crackpotinventor',
-        reward = math.random(1, 5)
+        ped = 'cs_crackpotinventor'
     }, {
         coords = vector3(-291.79, 682.76, 113.62),
         heading = 86.9,
-        ped = 'cs_crackpotinventor',
-        reward = math.random(1, 5)
+        ped = 'cs_crackpotinventor'
     }, {
         coords = vector3(1431.59, -1392.85, 81.75),
         heading = 70.62,
-        ped = 'cs_crackpotinventor',
-        reward = math.random(1, 5)
+        ped = 'cs_crackpotinventor'
     }, {
         coords = vector3(1427.53, -1279.08, 78.06),
         heading = 147.12,
-        ped = 'cs_crackpotinventor',
-        reward = math.random(1, 5)
+        ped = 'cs_crackpotinventor'
     }
 }
 -- Value for all Recruting missions or a set number
 Config.RecValue = math.random(1, 5)
 
 Config.infoExtracting = {
-    {coords = vector3(1331.64, -1378.09, 80.51)},
-    {coords = vector3(1399.2, -1285.79, 78.17)}
+    {coords = vector3(1331.6, -1378.07, 80.51)},
+    {coords = vector3(1331.6, -1378.07, 80.51)}
 }
+
 -- Value for all info Extracting missions or a set number
 Config.InfoValue = math.random(1, 5)
