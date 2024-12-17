@@ -17,11 +17,12 @@ Config.DevMode = false
 
 Config.WebHooks = {
 
-    Sell = 'https://discord.com/api/webhooks/1317490814888316959/9rkaFsDysYhKv8AUsrBfT1if8kGaU_BPUkx1ReysGjALQG5Q55YKJFIMq9BoXfFPBKpG',
-    Buy = 'https://discord.com/api/webhooks/1317490702304673874/FuBoyRnFCtsyLt1ZVV9OAMUMvudhMLZac0CKpooG07j45xnm4KtplFnhkfrxI54hks53',
+    Sell    = 'https://discord.com/api/webhooks/1317490814888316959/9rkaFsDysYhKv8AUsrBfT1if8kGaU_BPUkx1ReysGjALQG5Q55YKJFIMq9BoXfFPBKpG',
+    Buy     = 'https://discord.com/api/webhooks/1317490702304673874/FuBoyRnFCtsyLt1ZVV9OAMUMvudhMLZac0CKpooG07j45xnm4KtplFnhkfrxI54hks53',
     Mission = 'https://discord.com/api/webhooks/1317490977916715038/Pf-asteW_-ua_L51-Eg48Fb62rZhXl8APsBLTYvmhqS8Q_loFD_T8gD8YW0J5vCRlx17'
 
 }
+
 -- stock Locations, you can add more
 Config.Locations = {
     { -- Valentine
