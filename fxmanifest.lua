@@ -19,5 +19,10 @@ server_scripts {
 }
 
 shared_scripts {
-    'shared/*.lua',
+    'shared/*.lua'
+}
+
+dependencies {
+    'bcc-utils',
+    'feather-menu'
 }
