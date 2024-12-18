@@ -13,7 +13,7 @@ the SQL event provided in the shared folder more info there.
 -- ========================
 --        Config
 -- ========================
-Config.DevMode = false
+Config.DevMode = true
 
 Config.WebHooks = {
 

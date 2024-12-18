@@ -11,6 +11,21 @@ local HammerMinigameCFG = {
     nails = 5,
     type = 'dark-wood'
 }
+
+local RPS_minigame_CFG = {focus = true, cursor = true, allowretry = false}
+
+local SkillCheck_CFG = {
+    focus = true, -- Should minigame take nui focus (required)
+    cursor = false, -- Should minigame have cursor
+    maxattempts = 3, -- How many fail attempts are allowed before game over
+    type = 'bar', -- What should the bar look like. (bar, trailing)
+    userandomkey = true, -- Should the minigame generate a random key to press?
+    keytopress = 'G', -- userandomkey must be false for this to work. Static key to press
+    keycode = 71, -- The JS keycode for the keytopress
+    speed = 20, -- How fast the orbiter grows
+    strict = true -- if true, letting the timer run out counts as a failed attempt
+}
+
 -- ===============================
 --          PROMPTS
 -- ===============================
@@ -88,33 +103,21 @@ function Advertising_mission(stockName)
         local playerPed = PlayerPedId()
         local animDict = "amb_work@world_human_hammer@wall@male_a@stand_exit"
         local animName = "exit_front"
-        local hammerModel = GetHashKey("p_hammer01x")
-        local boneIndex = GetPedBoneIndex(playerPed, 16828)
 
         RequestAnimDict(animDict)
         while not HasAnimDictLoaded(animDict) do Citizen.Wait(100) end
 
-        RequestModel(hammerModel)
-        while not HasModelLoaded(hammerModel) do Citizen.Wait(100) end
-
-        local hammer = CreateObject(hammerModel, 0.0, 0.0, 0.0, true, true,
-                                    false)
-
-        AttachEntityToEntity(hammer, playerPed, boneIndex, 0.04, -0.08, -0.2,
-                             -50.0, 0.0, 0.0, true, true, false, true, 1, true)
-        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
-                     false, false, false)
-
-        MiniGame.Start('hammertime', HammerMinigameCFG, function() end)
-
-        DeleteObject(hammer)
+        MiniGame.Start('hammertime', HammerMinigameCFG, function(result)
+            if result.result then
+                DevPrint(result.result)
+                TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0,
+                             0, false, false, false)
+                TriggerServerEvent('stocks:IncreaseStockValue',
+                                   mission_button_clicked, 'AD')
+            end
+        end)
 
         mission_blip:Remove()
-
-        Wait(5000)
-
-        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
-                           'AD')
 
     end
 
@@ -177,13 +180,25 @@ function Recruit_misssion(stockName)
         local animDict = "ai_gestures@gen_female@standing@silent@script"
         local animName = "silent_dirty_hands_l_001"
 
-        TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
-                     false, false, false)
+        MiniGame.Start('rps', RPS_minigame_CFG, function(result)
+            TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
+                         false, false, false)
+            if result.result == 'win' or result.result == 'tie' then
+                DevPrint(result.result)
+                TriggerServerEvent('stocks:IncreaseStockValue',
+                                   mission_button_clicked, 'Recruit')
+            else
+                DevPrint(result.result)
+                Core.NotifyObjective(
+                    'This person do not want to join you cause...', 5000)
+                IsMissionActive = false
+            end
+        end)
+
         Wait(5000)
         mission_blip:Remove()
         recruit_ped:Remove()
-        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
-                           'Recruit')
+
     end
 
     while IsMissionActive do
@@ -233,15 +248,20 @@ function Info_mission(stockName)
     function ExtractInfo()
         local playerPed = PlayerPedId()
         local scenario_name = 'WORLD_HUMAN_WRITE_NOTEBOOK'
-
-        TaskStartScenarioInPlace(playerPed, scenario_name, 5, true)
-
-        mission_blip:Remove()
-
-        TriggerServerEvent('stocks:IncreaseStockValue', mission_button_clicked,
-                           'Info')
-
-        IsMissionActive = false
+        MiniGame.Start('skillcheck', SkillCheck_CFG, function(result)
+            print("Passed?", result.passed)
+            if result.passed then
+                TaskStartScenarioInPlace(playerPed, scenario_name, 5, true)
+                TriggerServerEvent('stocks:IncreaseStockValue',
+                mission_button_clicked, 'Info')
+                mission_blip:Remove()
+                IsMissionActive = false
+            else
+                Core.NotifyObjective('Those are fake documents... better luck next time', 4000)
+                mission_blip:Remove()
+                IsMissionActive = false
+            end
+        end)
     end
 
     while IsMissionActive do
