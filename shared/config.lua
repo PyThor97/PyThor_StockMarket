@@ -17,8 +17,8 @@ Config.DevMode = true
 
 Config.WebHooks = {
 
-    Sell    = 'https://discord.com/api/webhooks/1317490814888316959/9rkaFsDysYhKv8AUsrBfT1if8kGaU_BPUkx1ReysGjALQG5Q55YKJFIMq9BoXfFPBKpG',
-    Buy     = 'https://discord.com/api/webhooks/1317490702304673874/FuBoyRnFCtsyLt1ZVV9OAMUMvudhMLZac0CKpooG07j45xnm4KtplFnhkfrxI54hks53',
+    Sell = 'https://discord.com/api/webhooks/1317490814888316959/9rkaFsDysYhKv8AUsrBfT1if8kGaU_BPUkx1ReysGjALQG5Q55YKJFIMq9BoXfFPBKpG',
+    Buy = 'https://discord.com/api/webhooks/1317490702304673874/FuBoyRnFCtsyLt1ZVV9OAMUMvudhMLZac0CKpooG07j45xnm4KtplFnhkfrxI54hks53',
     Mission = 'https://discord.com/api/webhooks/1317490977916715038/Pf-asteW_-ua_L51-Eg48Fb62rZhXl8APsBLTYvmhqS8Q_loFD_T8gD8YW0J5vCRlx17'
 
 }
@@ -33,8 +33,7 @@ Config.Locations = {
         NpcHeading = 320.12,
         ped = 'a_m_m_htlfancytravellers_01',
         distance = 2
-    },
-    { -- Rhodes
+    }, { -- Rhodes
         Blip = true,
         BlipSprite = 'blip_robbery_bank',
         BlipName = 'Rhodes Stock Market',
@@ -55,6 +54,12 @@ Config.BuyPrice = 100
 Config.ProfitPerPrecent = 10
 
 -- Missions, you can add more locations
+Config.AdMinigameCFG = {
+    focus = true,
+    cursor = true,
+    nails = 5,
+    type = 'dark-wood'
+}
 Config.Advertising = {
 
     {coords = vector3(-182.72, 584.77, 113.42)},
@@ -63,11 +68,12 @@ Config.Advertising = {
     {coords = vector3(1381.95, -1403.74, 79.3)}
 
 }
-
 -- Value for all Advertising missions or a set number
 Config.AdValue = math.random(1, 5)
-
 -- Recruiting missions
+
+Config.RecMinigameCFG = {focus = true, cursor = true, allowretry = false}
+
 Config.Recruting = {
     {
         coords = vector3(-240.88, 618.2, 113.36),
@@ -90,10 +96,20 @@ Config.Recruting = {
 -- Value for all Recruting missions or a set number
 Config.RecValue = math.random(1, 5)
 
+Config.InfoMinigameCFG = {
+    focus = true, -- Should minigame take nui focus (required)
+    cursor = false, -- Should minigame have cursor
+    maxattempts = 3, -- How many fail attempts are allowed before game over
+    type = 'bar', -- What should the bar look like. (bar, trailing)
+    userandomkey = true, -- Should the minigame generate a random key to press?
+    keytopress = 'G', -- userandomkey must be false for this to work. Static key to press
+    keycode = 71, -- The JS keycode for the keytopress
+    speed = 20, -- How fast the orbiter grows
+    strict = true -- if true, letting the timer run out counts as a failed attempt
+}
 Config.infoExtracting = {
     {coords = vector3(1331.6, -1378.07, 80.51)},
     {coords = vector3(1331.6, -1378.07, 80.51)}
 }
-
 -- Value for all info Extracting missions or a set number
 Config.InfoValue = math.random(1, 5)

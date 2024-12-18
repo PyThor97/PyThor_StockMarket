@@ -5,26 +5,6 @@ local Core = exports.vorp_core:GetCore()
 local FeatherMenu = exports['feather-menu'].initiate()
 local BccUtils = exports['bcc-utils'].initiate()
 local MiniGame = exports['bcc-minigames'].initiate()
-local HammerMinigameCFG = {
-    focus = true,
-    cursor = true,
-    nails = 5,
-    type = 'dark-wood'
-}
-
-local RPS_minigame_CFG = {focus = true, cursor = true, allowretry = false}
-
-local SkillCheck_CFG = {
-    focus = true, -- Should minigame take nui focus (required)
-    cursor = false, -- Should minigame have cursor
-    maxattempts = 3, -- How many fail attempts are allowed before game over
-    type = 'bar', -- What should the bar look like. (bar, trailing)
-    userandomkey = true, -- Should the minigame generate a random key to press?
-    keytopress = 'G', -- userandomkey must be false for this to work. Static key to press
-    keycode = 71, -- The JS keycode for the keytopress
-    speed = 20, -- How fast the orbiter grows
-    strict = true -- if true, letting the timer run out counts as a failed attempt
-}
 
 -- ===============================
 --          PROMPTS
@@ -107,7 +87,7 @@ function Advertising_mission(stockName)
         RequestAnimDict(animDict)
         while not HasAnimDictLoaded(animDict) do Citizen.Wait(100) end
 
-        MiniGame.Start('hammertime', HammerMinigameCFG, function(result)
+        MiniGame.Start('hammertime', Config.AdMinigameCFG, function(result)
             if result.result then
                 DevPrint(result.result)
                 TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0,
@@ -180,7 +160,7 @@ function Recruit_misssion(stockName)
         local animDict = "ai_gestures@gen_female@standing@silent@script"
         local animName = "silent_dirty_hands_l_001"
 
-        MiniGame.Start('rps', RPS_minigame_CFG, function(result)
+        MiniGame.Start('rps', Config.RecMinigameCFG, function(result)
             TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 5000, 0, 0,
                          false, false, false)
             if result.result == 'win' or result.result == 'tie' then
@@ -224,6 +204,7 @@ end
 
 function Info_mission(stockName)
     stockName = mission_button_clicked
+
     DevPrint('Info extraction misssion started for: ' .. stockName)
 
     Core.NotifyObjective('Open your map to locate the mission target.', 4000)
@@ -248,8 +229,9 @@ function Info_mission(stockName)
     function ExtractInfo()
         local playerPed = PlayerPedId()
         local scenario_name = 'WORLD_HUMAN_WRITE_NOTEBOOK'
-        MiniGame.Start('skillcheck', SkillCheck_CFG, function(result)
-            print("Passed?", result.passed)
+
+        MiniGame.Start('skillcheck', Config.InfoMinigameCFG, function(result)
+            DevPrint("Passed?", result.passed)
             if result.passed then
                 TaskStartScenarioInPlace(playerPed, scenario_name, 5, true)
                 TriggerServerEvent('stocks:IncreaseStockValue',
