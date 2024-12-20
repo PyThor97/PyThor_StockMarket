@@ -34,11 +34,18 @@ Creating opportunities for players to strategize, invest, and earn in-game wealt
 
 ✔️ Requirments:
 
-vorp_core - https://github.com/VORPCORE/vorp_core-lua
+vorp_core
 
-bcc-utils - https://github.com/BryceCanyonCounty/bcc-utils
+bcc-utils
 
-bcc-minigames - https://github.com/BryceCanyonCounty/bcc-minigames
+bcc-minigames
 
-feather_menu - https://github.com/FeatherFramework/feather-menu
+feather_menu
 
+📄future updates planned:
+
+- Change requirements
+  
+- Use contribution points
+  
+- more missions
