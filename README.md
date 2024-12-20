@@ -1,4 +1,5 @@
 📈 PyThor Stocks - Advanced Dynamic Stock Market System for RedM
+
 🏦 Revolutionize Your RedM Server with a Realistic Stock Trading Experience!
 Introducing PyThor Stocks, the ultimate dynamic stock market system designed for RedM servers with full integration into VORP Core. Offer your players a truly immersive experience to buy, sell, and trade stocks with real-time price changes, profits, and risks!
 
@@ -33,11 +34,11 @@ Creating opportunities for players to strategize, invest, and earn in-game wealt
 
 ✔️ Requirments:
 
-vorp_core
+vorp_core - https://github.com/VORPCORE/vorp_core-lua
 
-bcc-utils
+bcc-utils - https://github.com/BryceCanyonCounty/bcc-utils
 
-bcc-minigames
+bcc-minigames - https://github.com/BryceCanyonCounty/bcc-minigames
 
-feather_menu
+feather_menu - https://github.com/FeatherFramework/feather-menu
 
