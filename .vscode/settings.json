@@ -1,8 +1,0 @@
-{
-    "Lua.diagnostics.globals": [
-        "MySQL"
-    ],
-    "Lua.diagnostics.disable": [
-        "undefined-global"
-    ]
-}
