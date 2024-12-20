@@ -11,6 +11,7 @@ Stock values update automatically every day within a customizable range (e.g., 5
 
 Players can buy and sell stocks at real-time market prices.
 Automatic profit calculations based on price increases with configurable multipliers.
+
 🔹 Automated Updates:
 Using advanced SQL Event Scheduling, stock prices are updated automatically at preset intervals without manual intervention.
 
