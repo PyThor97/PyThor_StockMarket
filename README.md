@@ -34,13 +34,13 @@ Creating opportunities for players to strategize, invest, and earn in-game wealt
 
 ✔️ Requirments:
 
-vorp_core
+- vorp_core
 
-bcc-utils
+- bcc-utils
 
-bcc-minigames
+- bcc-minigames
 
-feather_menu
+- feather_menu
 
 📄future updates planned:
 
