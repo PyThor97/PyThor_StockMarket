@@ -26,6 +26,3 @@ dependencies {
     'bcc-utils',
     'feather-menu'
 }
-
--- version must match version.file
-
