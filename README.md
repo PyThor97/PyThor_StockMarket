@@ -37,9 +37,3 @@ Custom Stock Options: Add or modify stock options, such as Gold, Oil, Spices, an
 - bcc-minigames
 
 - feather_menu
-
-- Change requirements
-  
-- Use contribution points
-  
-- more missions
