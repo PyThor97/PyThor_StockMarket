@@ -15,9 +15,9 @@ local function CheckVersion()
     PerformHttpRequest('https://raw.githubusercontent.com/PyThor97/PyThor_StockMarket/refs/heads/main/version.file', function(err, text, headers)
         local currentVersion = GetResourceMetadata(GetCurrentResourceName(), 'version')
 
-        if not text then 
+        if not text then
             versionCheckPrint('error', 'Currently unable to run a version check.')
-            return 
+            return
         end
         if text == currentVersion then
             versionCheckPrint('success', 'You are running the latest version.')

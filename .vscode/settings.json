@@ -1,5 +1,8 @@
 {
     "Lua.diagnostics.globals": [
         "MySQL"
+    ],
+    "Lua.diagnostics.disable": [
+        "missing-parameter"
     ]
 }
