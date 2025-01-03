@@ -5,6 +5,8 @@ local function ConsolePrint(...)
     if Config.DevMode then print("[DEV MODE]", ...) end
 end
 
+local repo = 'https://github.com/PyThor97/PyThor_StockMarket'
+BccUtils.Versioner.checkFile(GetCurrentResourceName(), repo)
 -- ===============================
 --          DEV PRINT
 -- ===============================

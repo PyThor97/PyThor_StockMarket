@@ -26,10 +26,3 @@ dependencies {
     'feather-menu'
 }
 
-version '2.0'
-vorp_checker 'yes'
--- can use color codes ^1
-vorp_name '^5your resource name ^4version Check^3'
--- path to the github repository, in here it must have a version.file file type where your change logs will be, also must be public repository
-vorp_github 'https://github.com/PyThor97/PyThor_StockMarket' 
-
