@@ -28,5 +28,5 @@ dependencies {
 
 version '2.0'
 vorp_checker 'yes'
-vorp_name '^4Resource version Check^3'
+vorp_name '^5PyThor_StockMarket ^4version Check^3'
 vorp_github 'https://github.com/PyThor97/PyThor_StockMarket'
