@@ -19,8 +19,6 @@ local function CheckVersion()
             versionCheckPrint('error', 'Currently unable to run a version check.')
             return 
         end
-
-      
         if text == currentVersion then
             versionCheckPrint('success', 'You are running the latest version.')
         else
