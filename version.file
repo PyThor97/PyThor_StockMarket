@@ -1,0 +1,7 @@
+<2.0>
+- Fixed feather menu error in client console
+- Added an option to decrease stock value if failed
+- Changed ad minigame if you switch EnableDecreaseOnFail var to true
+- Added job lock
+- Added another table for leaderboard
+- some minor fixes
