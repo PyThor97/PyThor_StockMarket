@@ -14,7 +14,7 @@ the SQL event provided in the shared folder more info there.
 -- =======================
 --        Config
 -- ========================
-Config.DevMode = true
+Config.DevMode = false
 
 --If a player failed in a mission should the stock value decrease? 
 Config.EnableDecreaseOnFail = true

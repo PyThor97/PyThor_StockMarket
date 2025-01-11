@@ -561,7 +561,7 @@ Citizen.CreateThread(function()
     sell_stock_amount:RegisterElement('slider', {
         label = "Amount to sell",
         start = 1,
-        min = 0,
+        min = 1,
         max = 100,
         steps = 1
     }, function(data)

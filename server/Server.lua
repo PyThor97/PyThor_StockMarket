@@ -10,7 +10,6 @@ end
 -- ===============================
 RegisterNetEvent('stocks:GetValue', function(stockName)
     local src = source
-    print("Received stock name: " .. stockName)
     local stockValue = MySQL.scalar.await(
                            'SELECT `stock_value` FROM `pythor_stocks` WHERE `stock_name` = ?',
                            {stockName})
@@ -206,7 +205,7 @@ RegisterNetEvent('stocks:GetStockValue')
 AddEventHandler('stocks:GetStockValue', function(stockName)
     local src = source
     if not stockName then
-        print("[ERROR] No stock name provided.")
+        ConsolePrint("[ERROR] No stock name provided.")
         TriggerClientEvent('stocks:ReturnStockValue', src, nil)
         return
     end
@@ -216,7 +215,7 @@ AddEventHandler('stocks:GetStockValue', function(stockName)
                            {stockName}) or 0
 
     TriggerClientEvent('stocks:ReturnStockValue', src, stockValue)
-    print("[INFO] Sent stock value:", stockValue, "for stock:", stockName)
+    ConsolePrint("[INFO] Sent stock value:", stockValue, "for stock:", stockName)
 end)
 
 -- ===============================
@@ -235,7 +234,7 @@ AddEventHandler('stocks:IncreaseStockValue', function(stockName, mission_type)
     if mission_type == 'Info' then contributionPoints = Config.InfoValue end
 
     if not stockName then
-        print("[ERROR] Missing stock name or value increase from client.")
+        ConsolePrint("[ERROR] Missing stock name or value increase from client.")
         return
     end
 
@@ -244,7 +243,7 @@ AddEventHandler('stocks:IncreaseStockValue', function(stockName, mission_type)
                                   {stockName})
 
     if not currentStockValue then
-        print("[ERROR] Stock not found: " .. tostring(stockName))
+        ConsolePrint("[ERROR] Stock not found: " .. tostring(stockName))
         TriggerClientEvent("vorp:TipBottom", src, "Stock not found.", 5000)
         return
     end
@@ -279,7 +278,7 @@ AddEventHandler('stocks:IncreaseStockValue', function(stockName, mission_type)
                                      ' and increased the value by ' .. 
                                      contributionPoints .. '%')
 
-    print("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
+                                     ConsolePrint("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
 end)
 
 
@@ -300,7 +299,7 @@ AddEventHandler('stocks:DecreaseStockValue', function(stockName, mission_type)
     if mission_type == 'Info' then deductionPoints = Config.InfoValue end
 
     if not stockName then
-        print("[ERROR] Missing stock name or value decrease from client.")
+        ConsolePrint("[ERROR] Missing stock name or value decrease from client.")
         return
     end
 
@@ -310,7 +309,7 @@ AddEventHandler('stocks:DecreaseStockValue', function(stockName, mission_type)
                                   {stockName})
 
     if not currentStockValue then
-        print("[ERROR] Stock not found: " .. tostring(stockName))
+        ConsolePrint("[ERROR] Stock not found: " .. tostring(stockName))
         TriggerClientEvent("vorp:TipBottom", src, "Stock not found.", 5000)
         return
     end
@@ -334,7 +333,7 @@ AddEventHandler('stocks:DecreaseStockValue', function(stockName, mission_type)
                                      ' has failed a mission ' .. mission_type .. ' in: ' ..
                                      stockName .. ' and decreased the value by ' .. deductionPoints .. '%')
 
-    print("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
+                                     ConsolePrint("[INFO] Stock value updated: " .. stockName .. " -> " .. newStockValue)
 end)
 
 -- ===============================
